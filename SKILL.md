@@ -18,9 +18,9 @@ Este arquivo resume os princípios que valem para qualquer tarefa; o detalhament
 | Async/await, concorrência, alocação de memória, Span<T>, benchmarks | `references/performance-concurrency.md` |
 | Chamadas a serviços externos, timeouts, retries, circuit breaker, resiliência | `references/resilience.md` |
 | Background worker, `BackgroundService`/`IHostedService`, consumidor de fila, job agendado (Hangfire/Quartz) | `references/background-workers.md` |
-| Testes automatizados, cobertura, qualidade de código, detecção de anti-padrões | `references/testing-quality.md` |
+| **Qualquer geração de código de produção novo (leitura obrigatória, sempre)** — além de cobertura, qualidade de código, detecção de anti-padrões | `references/testing-quality.md` |
 
-Não é preciso ler tudo de uma vez — trate cada referência como material sob demanda para a parte da tarefa que a exige.
+Não é preciso ler tudo de uma vez — trate cada referência como material sob demanda para a parte da tarefa que a exige. Exceção: `references/testing-quality.md` faz parte de toda tarefa que gera código de produção novo, porque a entrega inclui os testes.
 
 ## Princípios sempre válidos
 
@@ -36,7 +36,7 @@ Independente da referência específica, estes princípios guiam qualquer códig
 
 **Escolha a arquitetura para o tamanho do problema, não para o currículo.** Clean Architecture + DDD + CQRS com MediatR é a resposta certa para domínios complexos com regras de negócio ricas — não para um CRUD simples. Ao propor arquitetura, explique a troca (mais camadas = mais indireção, mas também mais testabilidade e separação de responsabilidades) em vez de aplicar o padrão por reflexo. Veja `references/architecture.md`.
 
-**Todo código de produção não trivial pede um teste.** Não é sobre perseguir 100% de cobertura — é sobre garantir que a regra de negócio ou o comportamento da API tenham um teste que quebra se alguém quebrar o comportamento. Veja `references/testing-quality.md` para o que testar e como.
+**Entrega de código novo inclui os testes.** Ao gerar código de produção novo, a entrega contém: (1) o código, (2) o(s) arquivo(s) de teste cobrindo a regra de negócio ou o comportamento observável do endpoint/worker/handler, e (3) o projeto de teste (`.csproj`) se ainda não existir. Não é sobre 100% de cobertura — é um teste que quebra se alguém quebrar o comportamento. Leia `references/testing-quality.md` para o que testar e como.
 
 **Sem "mágica" desnecessária.** Evite reflection pesada, AutoMapper e frameworks que escondem o que o código realmente faz. Use mapeamento explícito (construtor, método `ToDto()`) — é mais fácil de debugar e o compilador ajuda. Se o projeto existente já usa um desses frameworks de forma consolidada, siga o padrão do projeto em vez de misturar estilos.
 

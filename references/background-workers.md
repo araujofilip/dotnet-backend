@@ -64,12 +64,13 @@ O padrão geral: receber a mensagem, processar, só confirmar (ack) depois que o
 
 ```csharp
 public sealed class OrderQueueConsumer(
+    ServiceBusReceiver receiver,
     IServiceScopeFactory scopeFactory,
     ILogger<OrderQueueConsumer> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await foreach (var message in _receiver.ReceiveMessagesAsync(stoppingToken))
+        await foreach (var message in receiver.ReceiveMessagesAsync(stoppingToken))
         {
             try
             {
@@ -77,12 +78,12 @@ public sealed class OrderQueueConsumer(
                 var handler = scope.ServiceProvider.GetRequiredService<IOrderMessageHandler>();
                 await handler.HandleAsync(message.Body, stoppingToken);
 
-                await _receiver.CompleteMessageAsync(message, stoppingToken); // ack
+                await receiver.CompleteMessageAsync(message, stoppingToken); // ack
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Falha ao processar mensagem {MessageId}", message.MessageId);
-                await _receiver.AbandonMessageAsync(message, cancellationToken: stoppingToken); // nack, volta pra fila
+                await receiver.AbandonMessageAsync(message, cancellationToken: stoppingToken); // nack, volta pra fila
             }
         }
     }
@@ -99,7 +100,7 @@ Pontos que sempre importam:
 
 | Necessidade | Ferramenta |
 |---|---|
-| Loop simples de polling em intervalo fixo, sem persistência de agendamento entre restarts | `PeriodicTimer` dentro de um `BackgroundService` (como no primeiro exemplo) |
+| Loop simples de polling em intervalo fixo, sem persistência de agendamento entre restarts | `PeriodicTimer` (ou `Task.Delay`, como no primeiro exemplo) dentro de um `BackgroundService` |
 | Jobs agendados (cron), com dashboard, retry automático, persistência do agendamento em banco | **Hangfire** — mais simples de configurar, bom para a maioria dos casos de "rodar isso todo dia às 2h" |
 | Agendamento mais sofisticado (múltiplos triggers, jobs com dependência entre si, clustering explícito) | **Quartz.NET** — mais poder, mais configuração |
 
@@ -124,7 +125,7 @@ var channel = Channel.CreateBounded<OrderId>(new BoundedChannelOptions(capacity:
 });
 ```
 
-Ver `references/performance-concurrency.md` para o detalhamento de `Channels` vs outras ferramentas de concorrência.
+Ver `performance-concurrency.md` para o detalhamento de `Channels` vs outras ferramentas de concorrência.
 
 ## Observabilidade específica de worker
 
@@ -136,4 +137,4 @@ Um worker não tem requisições HTTP para monitorar latência — a observabili
 
 ## Testando workers
 
-Teste a lógica de processamento (`IOrderProcessor`, `IOrderMessageHandler`) isoladamente, como qualquer outro serviço de aplicação — sem precisar instanciar o `BackgroundService` inteiro. Para testar o comportamento de idempotência e de retry/dead-letter, um teste de integração com um broker real em container (`Testcontainers.RabbitMq` — ver `references/testing-quality.md`) é o que realmente valida que ack/nack e redelivery funcionam como esperado; mocks de fila não pegam esse tipo de erro de configuração.
+Teste a lógica de processamento (`IOrderProcessor`, `IOrderMessageHandler`) isoladamente, como qualquer outro serviço de aplicação — sem precisar instanciar o `BackgroundService` inteiro. Para testar o comportamento de idempotência e de retry/dead-letter, um teste de integração com um broker real em container (`Testcontainers.RabbitMq` — ver `testing-quality.md`) é o que realmente valida que ack/nack e redelivery funcionam como esperado; mocks de fila não pegam esse tipo de erro de configuração.

@@ -84,12 +84,12 @@ public sealed class SubmitOrderHandler(IOrderRepository repository, IUnitOfWork 
     {
         var order = await repository.GetByIdAsync(request.OrderId, ct);
         if (order is null)
-            return Result.Failure<Unit>("Pedido não encontrado.");
+            return Result<Unit>.Failure("Pedido não encontrado.");
 
         order.Submit();
         await unitOfWork.SaveChangesAsync(ct);
 
-        return Result.Success(Unit.Value);
+        return Result<Unit>.Success(Unit.Value);
     }
 }
 ```
@@ -106,6 +106,13 @@ public readonly record struct Result<T>
     public bool IsSuccess { get; }
     public T? Value { get; }
     public string? Error { get; }
+
+    private Result(bool isSuccess, T? value, string? error)
+    {
+        IsSuccess = isSuccess;
+        Value = value;
+        Error = error;
+    }
 
     public static Result<T> Success(T value) => new(true, value, null);
     public static Result<T> Failure(string error) => new(false, default, error);

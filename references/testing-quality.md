@@ -56,10 +56,10 @@ Para respostas de API com forma complexa (ex.: relatórios, payloads de webhook)
 
 ```csharp
 [Fact]
-public Task GetOrder_ReturnsExpectedShape()
+public async Task GetOrder_ReturnsExpectedShape()
 {
     var response = await client.GetAsync("/orders/123");
-    return Verify(await response.Content.ReadAsStringAsync());
+    await Verify(await response.Content.ReadAsStringAsync());
 }
 ```
 
