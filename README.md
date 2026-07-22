@@ -20,6 +20,29 @@ dotnet-backend/
 
 A raiz deste repositório **é** a skill — `SKILL.md` fica na raiz.
 
+## Como a skill funciona
+
+O `SKILL.md` é o ponto de entrada: carrega os princípios sempre válidos e uma tabela de roteamento que aponta qual referência ler conforme a área da tarefa. As referências são lidas sob demanda — só a(s) relevante(s) para a tarefa atual. A única leitura obrigatória em toda geração de código de produção novo é `testing-quality.md`, porque a entrega sempre inclui os testes.
+
+```mermaid
+flowchart TD
+    A[Pedido do usuário:<br/>escrever / revisar / arquitetar / refatorar<br/>código backend .NET] --> B[SKILL.md carregado<br/>princípios gerais + tabela de roteamento]
+    B --> C{Qual a área da tarefa?}
+    C -->|Estilo, C# idiomático| R1[references/code-style.md]
+    C -->|Camadas, DDD, CQRS, slices| R2[references/architecture.md]
+    C -->|Endpoints, validação, auth| R3[references/api-design.md]
+    C -->|EF Core, queries, paginação| R4[references/data-access.md]
+    C -->|Async, alocação, benchmarks| R5[references/performance-concurrency.md]
+    C -->|Chamadas externas, retry, timeout| R6[references/resilience.md]
+    C -->|Workers, filas, jobs| R7[references/background-workers.md]
+    R1 & R2 & R3 & R4 & R5 & R6 & R7 --> D{Gera código de<br/>produção novo?}
+    D -->|Sim| E[references/testing-quality.md<br/>leitura obrigatória]
+    D -->|Não - revisão| F[Referências usadas como checklist<br/>achados priorizados por impacto:<br/>correção → segurança/resiliência →<br/>legibilidade → performance]
+    E --> G[Entrega: código + testes<br/>+ .csproj de teste se não existir]
+    G --> H[Quality gates automatizados:<br/>analisadores estáticos + dotnet format,<br/>checagem de anti-padrões de código gerado por IA,<br/>CI falha em testes quebrados / cobertura<br/>abaixo do limiar / warnings de nullable]
+```
+
+
 ## Instalação
 
 ### Claude Code (CLI)
