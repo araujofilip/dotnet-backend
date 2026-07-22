@@ -12,7 +12,7 @@ Este arquivo resume os princípios que valem para qualquer tarefa; o detalhament
 | Se a tarefa envolve... | Leia |
 |---|---|
 | Legibilidade, nomenclatura, C# idiomático, records, pattern matching, nullable reference types | `references/code-style.md` |
-| Organização de projeto/solução, camadas, DDD, CQRS, MediatR, Domain Events, Result pattern | `references/architecture.md` |
+| Organização de projeto/solução, camadas, Vertical Slice, DDD, CQRS, MediatR, Domain Events, Result pattern | `references/architecture.md` |
 | Endpoints, Minimal APIs vs Controllers, validação, versionamento, autenticação/autorização | `references/api-design.md` |
 | EF Core, migrations, queries, N+1, leitura em alta escala, Dapper | `references/data-access.md` |
 | Async/await, concorrência, alocação de memória, Span<T>, benchmarks | `references/performance-concurrency.md` |
