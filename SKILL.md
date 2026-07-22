@@ -12,9 +12,9 @@ Este arquivo resume os princípios que valem para qualquer tarefa; o detalhament
 | Se a tarefa envolve... | Leia |
 |---|---|
 | Legibilidade, nomenclatura, C# idiomático, records, pattern matching, nullable reference types | `references/code-style.md` |
-| Organização de projeto/solução, camadas, Vertical Slice, DDD, CQRS, MediatR, Domain Events, Result pattern | `references/architecture.md` |
-| Endpoints, Minimal APIs vs Controllers, validação, versionamento, autenticação/autorização | `references/api-design.md` |
-| EF Core, migrations, queries, N+1, leitura em alta escala, Dapper | `references/data-access.md` |
+| Organização de projeto/solução, camadas, Vertical Slice, DDD, CQRS, MediatR, Domain Events, Transactional Outbox, Result pattern | `references/architecture.md` |
+| Endpoints, Minimal APIs vs Controllers, validação, idempotência/retry de cliente, versionamento, autenticação/autorização | `references/api-design.md` |
+| EF Core, migrations, queries, N+1, paginação (offset/keyset), concorrência otimista/lost update, leitura em alta escala, Dapper | `references/data-access.md` |
 | Async/await, concorrência, alocação de memória, Span<T>, benchmarks | `references/performance-concurrency.md` |
 | Chamadas a serviços externos, timeouts, retries, circuit breaker, resiliência | `references/resilience.md` |
 | Background worker, `BackgroundService`/`IHostedService`, consumidor de fila, job agendado (Hangfire/Quartz) | `references/background-workers.md` |
@@ -34,7 +34,7 @@ Independente da referência específica, estes princípios guiam qualquer códig
 
 **Assuma que dependências externas vão falhar.** Toda chamada de rede (HTTP, banco, fila) deve ter timeout explícito e uma estratégia consciente para falha (retry com backoff, circuit breaker, fallback, ou falha rápida e visível). "Deixar sem tratamento e torcer" não é uma estratégia — veja `references/resilience.md`.
 
-**Escolha a arquitetura para o tamanho do problema, não para o currículo.** Clean Architecture + DDD + CQRS com MediatR é a resposta certa para domínios complexos com regras de negócio ricas — não para um CRUD simples. Ao propor arquitetura, explique a troca (mais camadas = mais indireção, mas também mais testabilidade e separação de responsabilidades) em vez de aplicar o padrão por reflexo. Veja `references/architecture.md`.
+**Escolha a arquitetura para o tamanho do problema, não para o currículo.** Para domínios complexos com regras de negócio ricas, a recomendação padrão em código novo é Vertical Slice por fora com núcleo Clean Architecture/DDD por dentro (regras de negócio no `Domain`, casos de uso organizados por feature) — não para um CRUD simples. Em projeto existente com outro layout consolidado, siga o layout do projeto; migração para slices é decisão separada, nunca carona de uma feature. Ao propor arquitetura, explique a troca em vez de aplicar o padrão por reflexo. Veja `references/architecture.md`.
 
 **Entrega de código novo inclui os testes.** Ao gerar código de produção novo, a entrega contém: (1) o código, (2) o(s) arquivo(s) de teste cobrindo a regra de negócio ou o comportamento observável do endpoint/worker/handler, e (3) o projeto de teste (`.csproj`) se ainda não existir. Não é sobre 100% de cobertura — é um teste que quebra se alguém quebrar o comportamento. Leia `references/testing-quality.md` para o que testar e como.
 

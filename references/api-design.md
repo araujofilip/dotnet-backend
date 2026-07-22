@@ -39,6 +39,38 @@ app.MapPost("/orders", CreateOrder)
    .AddEndpointFilter<ValidationFilter<CreateOrderRequest>>();
 ```
 
+## Idempotência: todo endpoint de escrita deve tolerar retry do cliente
+
+Clientes (mobile, gateways, outros serviços) fazem retry automático em falha de rede — o mesmo POST pode chegar duas vezes. `resilience.md` cobre retry que **nós** fazemos em dependências; esta seção cobre o inverso: nossos endpoints recebendo o retry. Dois casos, duas soluções:
+
+**Transição de estado (`POST /orders/{id}/cancel`): idempotência natural.** Reconsulte o estado — se o recurso já está no estado alvo, responda sucesso, não erro:
+
+```csharp
+if (order.Status == OrderStatus.Cancelled)
+    return Result<Unit>.Success(Unit.Value); // retry da mesma intenção: 204, não 409
+
+if (!order.CanCancel) // estado que realmente impede (ex.: Shipped)
+    return Result<Unit>.Failure(new Error(ErrorKind.Conflict, "Pedido não pode ser cancelado."));
+```
+
+A distinção importa: "já no estado alvo" = intenção do cliente já satisfeita = sucesso; "estado incompatível" = conflito real = `409`.
+
+**Criação (`POST /orders`): Idempotency-Key.** Não há estado a reconsultar — duas chamadas criam dois recursos legítimos. O cliente envia um header `Idempotency-Key` (GUID gerado uma vez por tentativa lógica, repetido em cada retry dela); o servidor persiste o resultado da primeira execução associado à chave, **na mesma transação** da criação, e devolve o mesmo resultado nos retries:
+
+```csharp
+var existing = await idempotencyStore.FindResultAsync(key, ct);
+if (existing is not null)
+    return Result<Guid>.Success(existing.OrderId); // retry: mesmo resultado, sem criar de novo
+
+repository.Add(order);
+idempotencyStore.Save(key, order.Id);      // mesma transação do agregado
+await unitOfWork.SaveChangesAsync(ct);
+```
+
+A tabela de idempotência precisa de **unique constraint** na chave — é a constraint que garante correção quando dois retries chegam quase simultâneos (a checagem em memória sozinha tem race condition). Violação da constraint no `SaveChanges` = outra requisição ganhou a corrida: leia o resultado dela e devolva-o. Para distinguir essa violação de outro `DbUpdateException`, inspecione o erro do provider (Postgres: `PostgresException.SqlState == "23505"`; SQL Server: `SqlException.Number` 2601/2627).
+
+Detalhes práticos: trate a chave como string opaca (recomende UUID ao cliente, mas não interprete); persista só o que o retry precisa devolver (ID/location do recurso criado, não o corpo inteiro da resposta); e limpe chaves antigas com um job (retenção de ~24h cobre qualquer retry razoável — a tabela não pode crescer para sempre).
+
 ## Versionamento
 
 Toda API que pode ter consumidores externos (mobile, terceiros, outro time) precisa de uma estratégia de versionamento desde o primeiro endpoint — adicionar depois é muito mais caro. Opções comuns: versionamento por URL (`/v1/orders`) é o mais simples de entender e cachear; por header é mais "limpo" mas exige mais disciplina de client. Use o pacote `Asp.Versioning.Http` para Minimal APIs.
